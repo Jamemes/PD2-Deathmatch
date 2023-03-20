@@ -97,47 +97,43 @@ function MutatorFriendlyFire:setup_options_gui(node)
 end
 
 Hooks:PostHook(MutatorFriendlyFire, 'modify_value', 'PD2DMModifyValues', function(self, id, value)
-	if self:value("deathmatch") then
-		if id == "PD2DMGetRespawnPositions" then
-			local level = Global.game_settings.level_id
-			if level == "branchbank" then
-				return table.random({
-					{Vector3(-3969, -2206, 6), Rotation(-69, 0, 0)},
-					{Vector3(-4831, -2344, -14), Rotation(37, 0, 0)},
-					{Vector3(-6181, -3169, -14), Rotation(-1, 0, 0)},
-					{Vector3(-8358, -3252, -14), Rotation(-91, 0, 0)},
-					{Vector3(-5233, 2885, -14), Rotation(-81, 0, 0)},
-					{Vector3(-4917, 2053, -14), Rotation(-36, 0, 0)},
-					{Vector3(-2744, 162, 1), Rotation(-89, 0, 0)},
-					{Vector3(-2129, 1167, -14), Rotation(176, 0, 0)},
-					{Vector3(-1329, 1747, -14), Rotation(-5, 0, 0)},
-					{Vector3(-1648, 3183, -14), Rotation(1, 0, 0)},
-					{Vector3(2272, 3316, -14), Rotation(63, 0, 0)},
-					{Vector3(-58, -18, -14), Rotation(-131, 0, 0)},
-					{Vector3(-1151, -1937, -14), Rotation(-29, 0, 0)},
-					{Vector3(-1393, 222, 386), Rotation(87, 0, 0)},
-					{Vector3(-387, 3073, 386), Rotation(157, 0, 0)},
-					{Vector3(-217, 2939, -14), Rotation(173, 0, 0)},
-					{Vector3(-1514, 2185, -14), Rotation(-90, 0, 0)}
-				})
-			end
-		elseif id == "PD2DMStopGameOverScreen" then
-			return 10^10
-		elseif id == "PD2DMRemoveTeammateContours" then
-			value._unit:contour():add("teammate", nil, nil, Color.black)
-		elseif id == "PD2DMRemoveDownCounter" then
-			value._panel:child("player"):child("revive_panel"):hide()
-			value._panel:child("callsign"):show()
-			value._panel:child("callsign_bg"):show()
-		elseif id == "PD2DMRemoveNameLables" then
-			value:set_size(0, 0)
-		elseif id == "PD2DMRespawnAnnouncement" then
-			return "true"
-		elseif id == "PD2DMMovementSpeed" then
-			return value * self:value("movement_speed")
-		elseif id == "HuskPlayerDamage:FriendlyFireDamage" then
-			return value * self:get_friendly_fire_damage_multiplier()
+	if id == "PD2DMGetRespawnPositions" and self:value("deathmatch") then
+		local level = Global.game_settings.level_id
+		if level == "branchbank" then
+			return table.random({
+				{Vector3(-3969, -2206, 6), Rotation(-69, 0, 0)},
+				{Vector3(-4831, -2344, -14), Rotation(37, 0, 0)},
+				{Vector3(-6181, -3169, -14), Rotation(-1, 0, 0)},
+				{Vector3(-8358, -3252, -14), Rotation(-91, 0, 0)},
+				{Vector3(-5233, 2885, -14), Rotation(-81, 0, 0)},
+				{Vector3(-4917, 2053, -14), Rotation(-36, 0, 0)},
+				{Vector3(-2744, 162, 1), Rotation(-89, 0, 0)},
+				{Vector3(-2129, 1167, -14), Rotation(176, 0, 0)},
+				{Vector3(-1329, 1747, -14), Rotation(-5, 0, 0)},
+				{Vector3(-1648, 3183, -14), Rotation(1, 0, 0)},
+				{Vector3(2272, 3316, -14), Rotation(63, 0, 0)},
+				{Vector3(-58, -18, -14), Rotation(-131, 0, 0)},
+				{Vector3(-1151, -1937, -14), Rotation(-29, 0, 0)},
+				{Vector3(-1393, 222, 386), Rotation(87, 0, 0)},
+				{Vector3(-387, 3073, 386), Rotation(157, 0, 0)},
+				{Vector3(-217, 2939, -14), Rotation(173, 0, 0)},
+				{Vector3(-1514, 2185, -14), Rotation(-90, 0, 0)}
+			})
 		end
+	elseif id == "PD2DMStopGameOverScreen" and self:value("deathmatch") then
+		return 10^10
+	elseif id == "PD2DMRemoveTeammateContours" and self:value("deathmatch") then
+		value._unit:contour():add("teammate", nil, nil, Color.black)
+	elseif id == "PD2DMRemoveDownCounter" and self:value("deathmatch") then
+		value._panel:child("player"):child("revive_panel"):hide()
+		value._panel:child("callsign"):show()
+		value._panel:child("callsign_bg"):show()
+	elseif id == "PD2DMRemoveNameLables" and self:value("deathmatch") then
+		value:set_size(0, 0)
+	elseif id == "PD2DMRespawnAnnouncement" and self:value("deathmatch") then
+		return "true"
+	elseif id == "PD2DMMovementSpeed" and self:value("deathmatch") then
+		return value * self:value("movement_speed")
 	end
 end)
 
