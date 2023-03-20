@@ -41,19 +41,30 @@ function MenuCallbackHandler:play_deathmatch_mode()
 		Global.game_settings.gamemode_filter = GamemodeStandard.id
 	end
 
-	managers.mutators:reset_all_mutators()
-	
 	-- managers.features:announce_feature("cg22_event_explanation")
 	-- managers.mission:set_saved_job_value("cg22_participation", true)
 	
+	for _, mutator in ipairs(managers.mutators:mutators()) do
+		managers.mutators:set_enabled(mutator, false)
+	end
+	
+	local function size(str, val)
+		return table.size(string.split(str, "|"))
+	end
+	
 	local mutator = managers.mutators:get_mutator(MutatorFriendlyFire)
 	managers.mutators:set_enabled(mutator, true)
-	mutator:set_value("deathmatch", true)
+	
+	if size(mutator:value("deathmatch")) ~= size(mutator.default) then
+		mutator:clear_values()
+	end
+
+	local values = string.split(mutator:value("deathmatch"), "|")
+	values[1] = "enabled"
+	mutator:set_value("deathmatch", table.concat(values, "|"))
+	
 	managers.menu:active_menu().callback_handler:_update_mutators_info()
-	
-	-- test.text(managers.mutators:get_mutator(MutatorFriendlyFire))
-	-- test.text(MutatorFriendlyFire._type)
-	
+
 	-- managers.crimenet:set_sidebar_exclude_filter({
 		-- "menu_cn_short",
 		-- "menu_cn_chill",
@@ -67,7 +78,10 @@ end
 local function reset_dm()
 	local mutator = managers.mutators:get_mutator(MutatorFriendlyFire)
 	if mutator:value("deathmatch") then
-		mutator:set_value("deathmatch", false)
+		local values = string.split(mutator:value("deathmatch"), "|")
+		values[1] = "disabled"
+		mutator:set_value("deathmatch", table.concat(values, "|"))
+		
 		managers.mutators:set_enabled(mutator, false)
 		managers.menu:active_menu().callback_handler:_update_mutators_info()
 	end
