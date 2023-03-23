@@ -123,4 +123,40 @@ elseif string.lower(RequiredScript) == "lib/managers/menu/contractbrokergui" the
 			self._contact_data = contacts
 		end
 	end)
+elseif string.lower(RequiredScript) == "lib/network/matchmaking/networkmatchmakingsteam" then
+	Hooks:PostHook(NetworkMatchMakingSTEAM, "search_lobby", "PD2DMSearchLobbies", function(self, friends_only, no_filters)
+		if managers.menu:is_deathmatch_mode() and self.browser then
+			local default_keys = {
+				"owner_id",
+				"owner_name",
+				"level",
+				"difficulty",
+				"permission",
+				"state",
+				"num_players",
+				"drop_in",
+				"min_level",
+				"kick_option",
+				"job_class_min",
+				"job_class_max",
+				"allow_mods",
+				"Deathmatch"
+			}
+		
+			self.browser:set_interest_keys(default_keys)
+			self.browser:set_lobby_filter("Deathmatch", "enabled", "equal")
+		end
+	end)
+
+	Hooks:PostHook(NetworkMatchMakingSTEAM, "load_user_filters", "PD2DMAddFilter", function(self)
+		if managers.menu:is_deathmatch_mode() and self.browser then
+			managers.network.matchmake:add_lobby_filter("Deathmatch", "enabled", "equal")
+		end
+	end)
+elseif string.lower(RequiredScript) == "lib/managers/mutatorsmanager" then
+	Hooks:PostHook(MutatorsManager, "apply_matchmake_attributes", "PD2DMBuildattribute", function(self, lobby_attributes, ...)
+		if managers.menu:is_deathmatch_mode() then
+			lobby_attributes.Deathmatch = "enabled"
+		end
+	end)
 end

@@ -1,3 +1,33 @@
+Hooks:Add("LocalizationManagerPostInit", "Deathmatch_Mode_loc", function(...)
+	LocalizationManager:add_localized_strings({
+		deathmatch_mode = "Deathmatch!",
+		deathmatch_mode_options = "Deathmatch settings",
+		deathmatch_mode_options_desc = "Your lobby, your own rules!",
+		menu_respawn_time = "Respawn time",
+		menu_damage_interval = "Interval between taking damage",
+		menu_armor_regen_speed = "Armor regeneration time",
+		menu_movement_speed = "Movement speed",
+		menu_police_force = "Police Force",
+		menu_endless_assault = "Endless Assault",
+		
+		
+	})
+		
+	if Idstring("russian"):key() == SystemInfo:language():key() then
+		LocalizationManager:add_localized_strings({
+			deathmatch_mode = "Поединок!",
+			deathmatch_mode_options = "Настройки Поединка",
+			deathmatch_mode_options_desc = "Твоё лобби, твои правила!",
+			menu_respawn_time = "Время до возрождения",
+			menu_damage_interval = "Интервал между получением урона",
+			menu_armor_regen_speed = "Скорость регенерации брони",
+			menu_movement_speed = "Скорость передвижения",
+			menu_police_force = "Кол-во Полицейских",
+			menu_endless_assault = "Бесконечный штурм",
+		})
+	end
+end)
+
 Hooks:Add("MenuManagerBuildCustomMenus", "BuildCreateEmptyLobbyMenu", function(menu_manager, nodes)
 	local node = nodes.main
 	if node then
@@ -7,7 +37,6 @@ Hooks:Add("MenuManagerBuildCustomMenus", "BuildCreateEmptyLobbyMenu", function(m
 		local params = {
 			name = "deathmatch_mode",
 			text_id = "deathmatch_mode",
-			help_id = "deathmatch_mode_desc",
 			font = "fonts/font_large_mf",
 			font_size = 35,
 			callback = "play_deathmatch_mode",
@@ -36,9 +65,9 @@ Hooks:Add("MenuManagerBuildCustomMenus", "BuildCreateEmptyLobbyMenu", function(m
 			type = "CoreMenuItem.Item"
 		}
 		local params = {
-			name = "deathmatch_options_mode",
-			text_id = "deathmatch_options_mode",
-			help_id = "deathmatch_options_mode_desc",
+			name = "deathmatch_mode_options",
+			text_id = "deathmatch_mode_options",
+			help_id = "deathmatch_mode_options_desc",
 			font = "fonts/font_large_mf",
 			font_size = 30,
 			visible_callback = "is_deathmatch_mode",
@@ -58,7 +87,7 @@ Hooks:Add("MenuManagerBuildCustomMenus", "BuildCreateEmptyLobbyMenu", function(m
 			end
 		end
 		
-		table.insert(node._items, pos + 1, new_item)
+		table.insert(node._items, pos, new_item)
 	end
 end)
 
@@ -135,7 +164,6 @@ function MenuCallbackHandler:play_deathmatch_mode()
 	if managers.network.matchmake and managers.network.matchmake.load_user_filters then
 		managers.network.matchmake:load_user_filters()
 		Global.game_settings.search_mutated_lobbies = true
-		Global.game_settings.search_event_lobbies_override = true
 		Global.game_settings.gamemode_filter = GamemodeStandard.id
 	end
 
