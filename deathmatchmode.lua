@@ -94,6 +94,8 @@ function MutatorFriendlyFire:setup_options_gui(node)
 		add_slider(5, "movement_speed", 0.05, 0.5, 2, 0.01)
 		add_slider(6, "police_force", 0.05, 0, 5, 0.01)
 		add_toggle(7, "endless_assault")
+		
+		node:parameters().scene_state = "blackmarket"
 	end
 	
 	return data(self, node)

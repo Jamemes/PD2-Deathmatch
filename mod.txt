@@ -7,6 +7,9 @@
     "hooks":[
         {"hook_id": "lib/mutators/mutatorfriendlyfire",				"script_path": "deathmatchmode.lua"},
 		{"hook_id": "lib/managers/menumanager",						"script_path": "menumanager.lua"},
+		{"hook_id": "lib/managers/crimenetmanager",					"script_path": "hooks.lua"},
+		{"hook_id": "lib/managers/menu/contractbrokergui",			"script_path": "hooks.lua"},
+		{"hook_id": "lib/managers/menu/contractbrokergui",			"script_path": "hooks.lua"},
 		{"hook_id": "lib/managers/enemymanager",					"script_path": "hooks.lua"},
 		{"hook_id": "lib/managers/trademanager",					"script_path": "hooks.lua"},
 		{"hook_id": "lib/managers/playermanager",					"script_path": "hooks.lua"},
