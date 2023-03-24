@@ -1,4 +1,4 @@
-MutatorFriendlyFire.default = "disabled|5|0|6|1|1|off"
+MutatorFriendlyFire.default = "disabled|5|0|6|1|1|off|1"
 
 Hooks:PostHook(MutatorFriendlyFire, 'register_values', 'PD2DMRegisterValues', function(self, mutator_manager)
 	self:register_value("deathmatch", self.default, "dz")
@@ -22,14 +22,55 @@ Hooks:PostHook(MutatorFriendlyFire, 'reset_to_default', 'PD2DMDefault', function
 	reset_options(5, "movement_speed")
 	reset_options(6, "police_force")
 	reset_options(7, "endless_assault")
+	reset_options(8, "damage_to_player")
 		
 	self:set_value("deathmatch", table.concat(values, "|"))
 end)
 
+function MutatorFriendlyFire:conv(id, val)
+	val = tonumber(val)
+	
+	if id == "per" then
+		return (val > 1 and "+" or "") .. (val - 1) * 100 .. "%"
+	elseif id == "min" then
+		local sec = math.floor(val % 60)
+		return math.floor(val / 60) % 60 .. ":" .. (sec < 10 and "0" .. sec or sec)
+	elseif id == "sec" then
+		return val .. " " .. managers.localization:text("secs")
+	end
+end
+
 function MutatorFriendlyFire:name()
 	local name = MutatorFriendlyFire.super.name(self)
-	if self:_mutate_name("deathmatch") then
-		return tostring(self:value("deathmatch"))
+	local values = string.split(self:value("deathmatch"), "|")
+	if values[1] == "enabled" then
+		local dm = ""
+
+		dm = dm .. managers.localization:text("dm_respawn_time") .. ":\n " .. self:conv("min", values[2]) .. "\n"
+		
+		if math.round(values[3], 0.01) ~= 0 then
+			dm = dm .. managers.localization:text("dm_damage_interval") .. ":\n " .. self:conv("sec", values[3]) .. "\n"
+		end
+		
+		dm = dm .. managers.localization:text("dm_armor_regen_speed") .. ":\n " .. self:conv("sec", values[4]) .. "\n"
+		
+		if math.round(values[5], 0.01) ~= 1 then
+			dm = dm .. managers.localization:text("dm_movement_speed") .. ":\n " .. self:conv("per", values[5]) .. "\n"
+		end
+		
+		if math.round(values[6], 0.01) ~= 1 then
+			dm = dm .. managers.localization:text("dm_police_force") .. ":\n " .. self:conv("per", values[6]) .. "\n"
+		end
+		
+		if math.round(values[8], 0.01) ~= 1 then
+			dm = dm .. managers.localization:text("dm_damage_on_players") .. ":\n " .. self:conv("per", math.round(self:value("damage_multiplier"), 0.01)) .. "\n"
+		end
+
+		if values[7] == "on" then
+			dm = dm .. managers.localization:text("dm_endless_assault") .. ":\n -" .. managers.localization:text("dm_endless_assault_desc") .. "\n"
+		end
+		
+		return dm
 	else
 		return name
 	end
@@ -41,7 +82,7 @@ function MutatorFriendlyFire:setup_options_gui(node)
 		local params = {
 			name = name,
 			callback = "_update_mutator_value",
-			text_id = "menu_" .. name,
+			text_id = "dm_" .. name,
 			update_callback = function(item)
 				local values = string.split(self:value("deathmatch"), "|")
 				values[index] = math.round(item:value(), round)
@@ -68,7 +109,7 @@ function MutatorFriendlyFire:setup_options_gui(node)
 		local params = {
 			name = name,
 			callback = "_update_mutator_value",
-			text_id = "menu_" .. name,
+			text_id = "dm_" .. name,
 			update_callback = function(item)
 				local values = string.split(self:value("deathmatch"), "|")
 				values[index] = item:value()
@@ -95,6 +136,11 @@ function MutatorFriendlyFire:setup_options_gui(node)
 		add_slider(6, "police_force", 0.05, 0, 5, 0.01)
 		add_toggle(7, "endless_assault")
 		
+		local slider = node:item("ff_damage_slider")
+		if slider then
+			slider:set_value(values[8])
+		end
+		
 		node:parameters().scene_state = "blackmarket"
 	end
 	
@@ -104,47 +150,16 @@ end
 Hooks:PostHook(MutatorFriendlyFire, 'modify_value', 'PD2DMModifyValues', function(self, id, value)
 	local values = string.split(self:value("deathmatch"), "|")
 	if values[1] == "enabled" then
-		if id == "PD2DMGetRespawnPositions" then
-			local level = Global.game_settings.level_id
-			if level == "branchbank" then
-				return table.random({
-					{Vector3(-3969, -2206, 6), Rotation(-69, 0, 0)},
-					{Vector3(-4831, -2344, -14), Rotation(37, 0, 0)},
-					{Vector3(-6181, -3169, -14), Rotation(-1, 0, 0)},
-					{Vector3(-8358, -3252, -14), Rotation(-91, 0, 0)},
-					{Vector3(-5233, 2885, -14), Rotation(-81, 0, 0)},
-					{Vector3(-4917, 2053, -14), Rotation(-36, 0, 0)},
-					{Vector3(-2744, 162, 1), Rotation(-89, 0, 0)},
-					{Vector3(-2129, 1167, -14), Rotation(176, 0, 0)},
-					{Vector3(-1329, 1747, -14), Rotation(-5, 0, 0)},
-					{Vector3(-1648, 3183, -14), Rotation(1, 0, 0)},
-					{Vector3(2272, 3316, -14), Rotation(63, 0, 0)},
-					{Vector3(-58, -18, -14), Rotation(-131, 0, 0)},
-					{Vector3(-1151, -1937, -14), Rotation(-29, 0, 0)},
-					{Vector3(-1393, 222, 386), Rotation(87, 0, 0)},
-					{Vector3(-387, 3073, 386), Rotation(157, 0, 0)},
-					{Vector3(-217, 2939, -14), Rotation(173, 0, 0)},
-					{Vector3(-1514, 2185, -14), Rotation(-90, 0, 0)}
-				})
-			end
-		elseif id == "PD2DMStopGameOverScreen" then
-			return 10^10
-		elseif id == "PD2DMRemoveTeammateContours" then
-			value._unit:contour():add("teammate", nil, nil, Color.black)
-		elseif id == "PD2DMRemoveDownCounter" then
-			value._panel:child("player"):child("revive_panel"):hide()
-			value._panel:child("callsign"):show()
-			value._panel:child("callsign_bg"):show()
-		elseif id == "PD2DMRemoveNameLables" then
-			value:set_size(0, 0)
-		elseif id == "PD2DMRespawnAnnouncement" then
-			return "true"
-		elseif id == "PD2DMMovementSpeed" then
-			return value * values[5]
-		elseif id == "HuskPlayerDamage:FriendlyFireDamage" then
-			return value * self:get_friendly_fire_damage_multiplier()
+		if id == "HuskPlayerDamage:FriendlyFireDamage" then
+			return value * values[8]
 		end
 	end
+end)
+
+Hooks:PostHook(MutatorFriendlyFire, '_update_damage_multiplier', 'PD2DMModifyDamageToPlayers', function(self, item)
+	local values = string.split(self:value("deathmatch"), "|")
+	values[8] = math.round(item:value(), 0.01)
+	self:set_value("deathmatch", table.concat(values, "|"))
 end)
 
 function MutatorFriendlyFire:on_game_started(mutator_manager)
@@ -155,6 +170,87 @@ function MutatorFriendlyFire:on_game_started(mutator_manager)
 	local values = string.split(self:value("deathmatch"), "|")
 	local group = tweak_data.group_ai
 	local force = group.besiege.assault.force_balance_mul
+	
+	ElementDialogue._can_play = function() end
+	ObjectivesManager.activate_objective = function() end
+	HUDManager.add_waypoint = function() end
+	HUDSuspicion.show = function() end
+	SecurityCamera._set_suspicion_sound = function() end
+	ElementMissionEnd.on_executed = function() end
+	TradeManager._announce_spawn = function() end
+	
+	IngameWaitingForRespawnState.trade_death = function()
+		managers.dialog:queue_narrator_dialog("h51", {})
+	end
+	
+	Hooks:PostHook(SecurityCamera, "_sound_the_alarm", "PD2DMAlarmBeepRemoval", function(self, ...)
+		if managers.menu:is_deathmatch_mode() then
+			self._alarm_sound = self._unit:sound_source():post_event("camera_silent")
+		end
+	end)
+	
+	Hooks:PostHook(HUDManager, 'align_teammate_name_label', 'PD2DMRemoveNameLables', function(self, panel, ...)
+		panel:set_size(0, 0)
+	end)
+	
+	for i, panels in ipairs(managers.hud._teammate_panels) do
+		panels:panel():child("player"):child("revive_panel"):hide()
+		panels:panel():child("callsign"):show()
+		panels:panel():child("callsign_bg"):show()
+	end
+	
+	Hooks:PostHook(HuskPlayerMovement, "set_character_anim_variables", "PD2DMRemoveTeammateContours", function(self)
+		self._unit:contour():add("teammate", nil, nil, Color.black)
+	end)
+
+	local data = EnemyManager.add_delayed_clbk
+	function EnemyManager:add_delayed_clbk(id, clbk, execute_t)
+
+		if id == "_gameover_clbk" then
+			execute_t = 10^10
+		end
+		
+		data(self, id, clbk, execute_t)
+	end
+	
+	local data = PlayerManager.movement_speed_multiplier
+	function PlayerManager:movement_speed_multiplier(speed_state, bonus_multiplier, upgrade_level, health_ratio)
+		local value = data(self, speed_state, bonus_multiplier, upgrade_level, health_ratio)
+		
+		value = value * values[5]
+		
+		return value
+	end
+	
+	local data = CriminalsManager.get_valid_player_spawn_pos_rot
+	function CriminalsManager:get_valid_player_spawn_pos_rot(peer_id)
+		local returned = data(self, peer_id)
+		local level = Global.game_settings.level_id
+		
+		if level == "branchbank" then
+			return table.random({
+				{Vector3(-3969, -2206, 6), Rotation(-69, 0, 0)},
+				{Vector3(-4831, -2344, -14), Rotation(37, 0, 0)},
+				{Vector3(-6181, -3169, -14), Rotation(-1, 0, 0)},
+				{Vector3(-8358, -3252, -14), Rotation(-91, 0, 0)},
+				{Vector3(-5233, 2885, -14), Rotation(-81, 0, 0)},
+				{Vector3(-4917, 2053, -14), Rotation(-36, 0, 0)},
+				{Vector3(-2744, 162, 1), Rotation(-89, 0, 0)},
+				{Vector3(-2129, 1167, -14), Rotation(176, 0, 0)},
+				{Vector3(-1329, 1747, -14), Rotation(-5, 0, 0)},
+				{Vector3(-1648, 3183, -14), Rotation(1, 0, 0)},
+				{Vector3(2272, 3316, -14), Rotation(63, 0, 0)},
+				{Vector3(-58, -18, -14), Rotation(-131, 0, 0)},
+				{Vector3(-1151, -1937, -14), Rotation(-29, 0, 0)},
+				{Vector3(-1393, 222, 386), Rotation(87, 0, 0)},
+				{Vector3(-387, 3073, 386), Rotation(157, 0, 0)},
+				{Vector3(-217, 2939, -14), Rotation(173, 0, 0)},
+				{Vector3(-1514, 2185, -14), Rotation(-90, 0, 0)}
+			})
+		end
+		
+		return returned
+	end
 	
 	if values[6] ~= 1 then
 		for i = 1, 4 do
