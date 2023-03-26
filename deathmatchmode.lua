@@ -269,6 +269,25 @@ function MutatorFriendlyFire:on_game_started(mutator_manager)
 			lvl.team_ai_off = true
 		end
 	end
+	
+	local color = Color.black
+	local cont = tweak_data.contour
+	cont.character.standard_color = color
+	cont.character.friendly_color = color
+	cont.character.friendly_minion_color = color
+	cont.character.downed_color = color
+	cont.character.dead_color = color
+	cont.character.tmp_invulnerable_color = color
+	cont.character_interactable.standard_color = color
+	cont.interactable.standard_color = color
+	cont.contour_off.standard_color = color
+	cont.deployable.standard_color = color
+	cont.deployable.active_color = color
+	cont.deployable.disabled_color = color
+	cont.upgradable.standard_color = color
+	cont.pickup.standard_color = color
+	cont.interactable_icon.standard_color = color
+	cont.interactable_look_at.standard_color = color
 
 	local player = tweak_data.player
 	player.damage.automatic_respawn_time = values[2]

@@ -94,6 +94,31 @@ elseif string.lower(RequiredScript) == "lib/network/matchmaking/networkmatchmaki
 			managers.network.matchmake:add_lobby_filter("Deathmatch", "enabled", "equal")
 		end
 	end)
+elseif string.lower(RequiredScript) == "lib/network/base/hostnetworksession" then
+	local function kick_non_dm_user(peer)
+		if managers.menu:is_deathmatch_mode() and not peer._loading then
+			local has_dm = false
+			for k, v in pairs(peer._mods) do
+				if v.name == "PD2 Deathmatch" then
+					has_dm = true
+				end
+			end
+			
+			if not has_dm then
+				managers.chat:feed_system_message(ChatManager.GAME, peer:name() .. managers.localization:text("player_without_dmm"))
+				managers.network:session():send_to_peers('kick_peer', peer:id(), 2)
+				managers.network:session():on_peer_kicked(peer, peer:id(), 2)
+			end
+		end
+	end
+
+	Hooks:PostHook(HostNetworkSession, 'on_peer_entered_lobby', "PD2DMKickNonDMUserFromLobby", function(self, peer)
+		kick_non_dm_user(peer)
+	end)
+
+	Hooks:PostHook(HostNetworkSession, 'on_peer_sync_complete', "PD2DMKickNonDMUserFromGame", function(self, peer, peer_id)
+		kick_non_dm_user(peer)
+	end)
 elseif string.lower(RequiredScript) == "lib/managers/mutatorsmanager" then
 	Hooks:PostHook(MutatorsManager, "apply_matchmake_attributes", "PD2DMBuildattribute", function(self, lobby_attributes, ...)
 		if managers.menu:is_deathmatch_mode() then

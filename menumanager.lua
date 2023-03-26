@@ -15,6 +15,7 @@ Hooks:Add("LocalizationManagerPostInit", "Deathmatch_Mode_loc", function(...)
 		dm_endless_assault = "Endless Assault",
 		dm_damage_on_players = "Damage on players",
 		dm_endless_assault_desc = "No breaks between assaults.",
+		player_without_dmm = " has no PD2 Deathmatch installed.",
 		secs = "s.",
 	})
 		
@@ -35,6 +36,7 @@ Hooks:Add("LocalizationManagerPostInit", "Deathmatch_Mode_loc", function(...)
 			dm_endless_assault = "Бесконечный штурм",
 			dm_damage_on_players = "Урон по игрокам",
 			dm_endless_assault_desc = "Нет перерывов между штурмами.",
+			player_without_dmm = " не имеет PD2 Deathmatch в списке модов.",
 			secs = "с.",
 		})
 	end
