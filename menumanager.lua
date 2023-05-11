@@ -1,3 +1,18 @@
+local function switch_dm_matchmaking_key(toggle)
+	local dm_key = "_DEATHMATCH_MODE"
+	local matchmake_key = NetworkMatchMakingSTEAM._BUILD_SEARCH_INTEREST_KEY
+	
+	if toggle then
+		if not string.find(matchmake_key, dm_key) then
+			NetworkMatchMakingSTEAM._BUILD_SEARCH_INTEREST_KEY = matchmake_key .. dm_key
+		end
+	elseif not toggle then
+		if string.find(matchmake_key, dm_key) then
+			NetworkMatchMakingSTEAM._BUILD_SEARCH_INTEREST_KEY = string.gsub(matchmake_key, dm_key, "")
+		end
+	end
+end
+
 Hooks:Add("LocalizationManagerPostInit", "Deathmatch_Mode_loc", function(...)
 	LocalizationManager:add_localized_strings({
 		deathmatch_mode = "Deathmatch!",
@@ -42,7 +57,7 @@ Hooks:Add("LocalizationManagerPostInit", "Deathmatch_Mode_loc", function(...)
 	end
 end)
 
-Hooks:Add("MenuManagerBuildCustomMenus", "BuildCreateEmptyLobbyMenu", function(menu_manager, nodes)
+Hooks:Add("MenuManagerBuildCustomMenus", "Deathmatch_Mode_options", function(menu_manager, nodes)
 	local node = nodes.main
 	if node then
 		local data_node = {
@@ -84,7 +99,7 @@ Hooks:Add("MenuManagerBuildCustomMenus", "BuildCreateEmptyLobbyMenu", function(m
 			help_id = "deathmatch_mode_options_desc",
 			font = "fonts/font_large_mf",
 			font_size = 30,
-			visible_callback = "is_deathmatch_mode",
+			visible_callback = "is_deathmatch_mode is_client",
 			callback = "open_deathmatch_options"
 		}
 		local new_item = node:create_item(data_node, params)
@@ -103,10 +118,45 @@ Hooks:Add("MenuManagerBuildCustomMenus", "BuildCreateEmptyLobbyMenu", function(m
 		
 		table.insert(node._items, pos, new_item)
 	end
+	
+	local node = nodes.pause
+	if node then
+		local data_node = {
+			type = "CoreMenuItem.Item"
+		}
+		local params = {
+			name = "return_to_loadout",
+			text_id = "return_to_loadout",
+			help_id = "return_to_loadout_desc",
+			font = "fonts/font_large_mf",
+			font_size = 30,
+			visible_callback = "is_deathmatch_mode",
+			callback = "return_to_loadout_clbk"
+		}
+		local new_item = node:create_item(data_node, params)
+		
+		new_item.dirty_callback = callback(node, node, "item_dirty")
+		if node.callback_handler then
+			new_item:set_callback_handler(node.callback_handler)
+		end
+		
+		local pos = 0
+		for id, item in pairs(node._items) do
+			if item:name() == "resume_game" then
+				pos = id
+			end
+		end
+		
+		table.insert(node._items, pos, new_item)
+	end
 end)
 
 function MenuCallbackHandler:is_deathmatch_mode()
 	return managers.menu:is_deathmatch_mode()
+end
+
+function MenuCallbackHandler:is_client()
+	return Network and not Network:is_client()
 end
 
 function MenuCallbackHandler:is_not_deathmatch_mode()
@@ -141,38 +191,12 @@ function MenuCallbackHandler:open_deathmatch_options()
 	managers.menu:open_node("mutators_options", {mutator})
 end
 
-function MenuCallbackHandler:play_deathmatch_mode()
-	if managers.network.matchmake and managers.network.matchmake.load_user_filters then
-		managers.network.matchmake:load_user_filters()
-		Global.game_settings.search_mutated_lobbies = true
-		Global.game_settings.search_event_lobbies_override = true
-		Global.game_settings.gamemode_filter = GamemodeStandard.id
-	end
-
-	-- managers.features:announce_feature("cg22_event_explanation")
-	-- managers.mission:set_saved_job_value("cg22_participation", true)
-	
-	for _, mutator in ipairs(managers.mutators:mutators()) do
-		managers.mutators:set_enabled(mutator, false)
-	end
-	
-	local function size(str)
-		local _, count = string.gsub(str, "|", "")
-		return count
-	end
-	
-	local mutator = managers.mutators:get_mutator(MutatorFriendlyFire)
-	managers.mutators:set_enabled(mutator, true)
-
-	if size(mutator:value("deathmatch")) ~= size(mutator.default) then
-		mutator:clear_values()
-	end
-	
-	local values = string.split(mutator:value("deathmatch"), "|")
-	values[1] = "enabled"
-	mutator:set_value("deathmatch", table.concat(values, "|"))
-	
-	managers.menu:active_menu().callback_handler:_update_mutators_info()
+function MenuCallbackHandler:return_to_loadout_clbk()
+	managers.network:session():local_peer():set_waiting_for_player_ready(false)
+	game_state_machine:change_state_by_name("ingame_waiting_for_players", {
+		sync_data = false
+	})
+	managers.menu:close_menu()
 end
 
 function MenuCallbackHandler:play_deathmatch_mode()
@@ -205,31 +229,23 @@ function MenuCallbackHandler:play_deathmatch_mode()
 	mutator:set_value("deathmatch", table.concat(values, "|"))
 	
 	managers.menu:active_menu().callback_handler:_update_mutators_info()
+
+	switch_dm_matchmaking_key(true)
 end
 
-local function reset_dm()
-	local mutator = managers.mutators:get_mutator(MutatorFriendlyFire)
-	if mutator:value("deathmatch") then
-		local values = string.split(mutator:value("deathmatch"), "|")
-		values[1] = "disabled"
-		mutator:set_value("deathmatch", table.concat(values, "|"))
-		
-		managers.mutators:set_enabled(mutator, false)
-		managers.menu:active_menu().callback_handler:_update_mutators_info()
-	end
-end
-
-Hooks:PostHook(MenuCallbackHandler, 'on_leave_lobby', 'PD2DMResetDMM', function(self, ...)
-	reset_dm()
-end)
-
-Hooks:PostHook(MenuCallbackHandler, 'play_single_player', 'PD2DMResetDMM2', function(self, ...)
-	reset_dm()
-end)
-
-Hooks:PostHook(MenuCallbackHandler, 'play_online_game', 'PD2DMResetDMM2', function(self, ...)
+Hooks:PostHook(MenuComponentManager, '_create_menuscene_info_gui', 'PD2DMResetDMM', function(...)
 	if not Network:is_server() then
-		reset_dm()
+		local mutator = managers.mutators:get_mutator(MutatorFriendlyFire)
+		if mutator:value("deathmatch") then
+			local values = string.split(mutator:value("deathmatch"), "|")
+			values[1] = "disabled"
+			mutator:set_value("deathmatch", table.concat(values, "|"))
+			
+			managers.mutators:set_enabled(mutator, false)
+			managers.menu:active_menu().callback_handler:_update_mutators_info()
+			
+			switch_dm_matchmaking_key(false)
+		end
 	end
 end)
 
@@ -274,50 +290,52 @@ end
 Hooks:PostHook(ContractBoxGui, 'create_mutators_tooltip', 'PD2DMtooltip', function(self, ...)
 	if managers.menu:is_deathmatch_mode() then
 		local mutator = managers.mutators:get_mutator(MutatorFriendlyFire)
-
-		self._mutators_tooltip:clear()
 		
-		local deathmatch_title = self._mutators_tooltip:text({
-			y = 10,
-			name = "deathmatch_title",
-			x = 10,
-			font = tweak_data.menu.pd2_medium_font,
-			font_size = tweak_data.menu.pd2_medium_font_size,
-			text = managers.localization:to_upper_text("menu_cn_deathmatchs_active"),
-			h = tweak_data.menu.pd2_medium_font_size
-		})
-		fine_text(deathmatch_title)
-	
-		local w = 0
-		local y = deathmatch_title:bottom()
-		local presets = {
-			x = 10,
-			y = y,
-			layer = 1,
-			font = tweak_data.menu.pd2_small_font,
-			font_size = tweak_data.menu.pd2_small_font_size * 0.85
-		}
+		if alive(self._mutators_tooltip) then
+			self._mutators_tooltip:clear()
+			
+			local deathmatch_title = self._mutators_tooltip:text({
+				y = 10,
+				name = "deathmatch_title",
+				x = 10,
+				font = tweak_data.menu.pd2_medium_font,
+				font_size = tweak_data.menu.pd2_medium_font_size,
+				text = managers.localization:to_upper_text("menu_cn_deathmatchs_active"),
+				h = tweak_data.menu.pd2_medium_font_size
+			})
+			fine_text(deathmatch_title)
 		
-		presets.text = mutator:name()
-		local respawn_time = self._mutators_tooltip:text(presets)
-		fine_text(respawn_time)
-		y = y + respawn_time:h()
-		w = w + respawn_time:w()
-
-		self._mutators_tooltip:set_size(w + 16, y + 8)
-		self._mutators_tooltip:rect({
-			alpha = 0.8,
-			layer = -1,
-			color = Color.black
-		})
-		BoxGuiObject:new(self._mutators_tooltip, {
-			sides = {
-				1,
-				1,
-				1,
-				1
+			local w = 0
+			local y = deathmatch_title:bottom()
+			local presets = {
+				x = 10,
+				y = y,
+				layer = 1,
+				font = tweak_data.menu.pd2_small_font,
+				font_size = tweak_data.menu.pd2_small_font_size * 0.85
 			}
-		})
+			
+			presets.text = mutator:name()
+			local respawn_time = self._mutators_tooltip:text(presets)
+			fine_text(respawn_time)
+			y = y + respawn_time:h()
+			w = w + respawn_time:w()
+
+			self._mutators_tooltip:set_size(w + 16, y + 8)
+			self._mutators_tooltip:rect({
+				alpha = 0.8,
+				layer = -1,
+				color = Color.black
+			})
+			BoxGuiObject:new(self._mutators_tooltip, {
+				sides = {
+					1,
+					1,
+					1,
+					1
+				}
+			})
+		end
 	end
 end)
 

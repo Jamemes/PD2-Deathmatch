@@ -64,68 +64,7 @@ elseif string.lower(RequiredScript) == "lib/managers/menu/contractbrokergui" the
 			self._contact_data = contacts
 		end
 	end)
-elseif string.lower(RequiredScript) == "lib/network/matchmaking/networkmatchmakingsteam" then
-	Hooks:PostHook(NetworkMatchMakingSTEAM, "search_lobby", "PD2DMSearchLobbies", function(self, friends_only, no_filters)
-		if managers.menu:is_deathmatch_mode() and self.browser then
-			local default_keys = {
-				"owner_id",
-				"owner_name",
-				"level",
-				"difficulty",
-				"permission",
-				"state",
-				"num_players",
-				"drop_in",
-				"min_level",
-				"kick_option",
-				"job_class_min",
-				"job_class_max",
-				"allow_mods",
-				"Deathmatch"
-			}
-		
-			self.browser:set_interest_keys(default_keys)
-			self.browser:set_lobby_filter("Deathmatch", "enabled", "equal")
-		end
-	end)
-
-	Hooks:PostHook(NetworkMatchMakingSTEAM, "load_user_filters", "PD2DMAddFilter", function(self)
-		if managers.menu:is_deathmatch_mode() and self.browser then
-			managers.network.matchmake:add_lobby_filter("Deathmatch", "enabled", "equal")
-		end
-	end)
-elseif string.lower(RequiredScript) == "lib/network/base/hostnetworksession" then
-	local function kick_non_dm_user(peer)
-		if managers.menu:is_deathmatch_mode() and not peer._loading then
-			local has_dm = false
-			for k, v in pairs(peer._mods) do
-				if v.name == "PD2 Deathmatch" then
-					has_dm = true
-				end
-			end
-			
-			if not has_dm then
-				managers.chat:feed_system_message(ChatManager.GAME, peer:name() .. managers.localization:text("player_without_dmm"))
-				managers.network:session():send_to_peers('kick_peer', peer:id(), 2)
-				managers.network:session():on_peer_kicked(peer, peer:id(), 2)
-			end
-		end
-	end
-
-	Hooks:PostHook(HostNetworkSession, 'on_peer_entered_lobby', "PD2DMKickNonDMUserFromLobby", function(self, peer)
-		kick_non_dm_user(peer)
-	end)
-
-	Hooks:PostHook(HostNetworkSession, 'on_peer_sync_complete', "PD2DMKickNonDMUserFromGame", function(self, peer, peer_id)
-		kick_non_dm_user(peer)
-	end)
 elseif string.lower(RequiredScript) == "lib/managers/mutatorsmanager" then
-	Hooks:PostHook(MutatorsManager, "apply_matchmake_attributes", "PD2DMBuildattribute", function(self, lobby_attributes, ...)
-		if managers.menu:is_deathmatch_mode() then
-			lobby_attributes.Deathmatch = "enabled"
-		end
-	end)
-	
 	local data = MutatorsManager.get_category_color
 	function MutatorsManager:get_category_color(category)
 		if managers.menu:is_deathmatch_mode() then
@@ -152,4 +91,34 @@ elseif string.lower(RequiredScript) == "lib/managers/mutatorsmanager" then
 		
 		return data(self)
 	end
+elseif string.lower(RequiredScript) == "lib/units/weapons/trip_mine/tripminebase" then
+
+		-- if ray and managers.player:player_unit() then
+-- function TripMineBase:_sensor(t)
+	-- local ray = self:_raycast()
+	
+	-- if ray then
+		-- ray.unit = managers.player:player_unit()
+	-- end
+	
+	-- if ray and ray.unit and not tweak_data.character[ray.unit:base()._tweak_table].is_escort then
+		-- self._sensor_units_detected = self._sensor_units_detected or {}
+
+		-- if not self._sensor_units_detected[ray.unit:key()] then
+			-- self._sensor_units_detected[ray.unit:key()] = true
+
+			-- if managers.player:has_category_upgrade("trip_mine", "sensor_highlight") and (managers.groupai:state():whisper_mode() and tweak_data.character[ray.unit:base()._tweak_table].silent_priority_shout or tweak_data.character[ray.unit:base()._tweak_table].priority_shout) then
+				-- managers.game_play_central:auto_highlight_enemy(ray.unit, true)
+				-- self:_emit_sensor_sound_and_effect()
+
+				-- if managers.network:session() then
+					-- managers.network:session():send_to_peers_synched("sync_unit_event_id_16", self._unit, "base", TripMineBase.EVENT_IDS.sensor_beep)
+				-- end
+			-- end
+
+			-- self._sensor_last_unit_time = t + 5
+		-- end
+	-- end
+-- end
+
 end
