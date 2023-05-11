@@ -192,11 +192,10 @@ function MenuCallbackHandler:open_deathmatch_options()
 end
 
 function MenuCallbackHandler:return_to_loadout_clbk()
-	managers.network:session():local_peer():set_waiting_for_player_ready(false)
-	game_state_machine:change_state_by_name("ingame_waiting_for_players", {
-		sync_data = false
-	})
 	managers.menu:close_menu()
+	managers.network:session():local_peer():set_waiting_for_player_ready(false)
+	managers.hud:load_hud_menu(Idstring("guis/level_intro"), false, false, true, {})
+	managers.menu:open_menu("kit_menu")
 end
 
 function MenuCallbackHandler:play_deathmatch_mode()

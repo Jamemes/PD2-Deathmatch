@@ -179,48 +179,15 @@ function MutatorFriendlyFire:on_game_started(mutator_manager)
 	ElementMissionEnd.on_executed = function() end
 	TradeManager._announce_spawn = function() end
 	CopBrain.begin_alarm_pager = function() end
-	
-	Hooks:PostHook(MissionBriefingGui, "on_ready_pressed", "PD2DMSendtocustodyafterloadout", function(self, ...)
-		if self._ready then
-			managers.player:set_player_state("mask_off")
-			MenuCallbackHandler:debug_goto_custody()
-			
-			-- if not managers.groupai:state():whisper_mode() then
-			
-				-- local music = function()
-					-- managers.music:post_event(tweak_data.levels:get_music_event("assault"))
-				-- end
 
-				-- managers.enemy:add_delayed_clbk("PD2DMsetmusicafterloadout", music, Application:time() + 1)
-			-- end
+	Hooks:PostHook(MissionBriefingGui, "on_ready_pressed", "PD2DMSendtocustodyafterloadout", function(self, ...)
+		if self._ready and not game_state_machine:current_state().blackscreen_started then
+			managers.menu:close_menu("kit_menu")
+			managers.menu_component:close_mission_briefing_gui()
+			managers.menu_component:close_chat_gui()
 		end
 	end)
-
-	local lox = false
-	IngameWaitingForPlayersState._start = function(self)
-		if not Network:is_server() then
-			return
-		end
-
-		if managers.preplanning:has_current_level_preplanning() then
-			managers.preplanning:execute_reserved_mission_elements()
-		end
-
-		managers.assets:check_triggers("asset")
-
-		local variant = managers.groupai:state():blackscreen_variant() or 0
-		
-		if not lox then
-			lox = true
-			self:sync_start(variant)
-			managers.network:session():send_to_peers_synched("sync_waiting_for_player_start", variant, Global.music_manager.current_track, Global.music_manager.current_music_ext or "")
-		end
-	end
 	
-	IngameWaitingForPlayersState.blackscreen_started = function()
-		return false
-	end
-
 	IngameWaitingForRespawnState.trade_death = function()
 		managers.dialog:queue_narrator_dialog("h51", {})
 	end
