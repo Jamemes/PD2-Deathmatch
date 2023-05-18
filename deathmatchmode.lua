@@ -184,18 +184,48 @@ function MutatorFriendlyFire:on_game_started(mutator_manager)
 		if self._ready and not game_state_machine:current_state().blackscreen_started then
 			managers.menu:close_menu("kit_menu")
 			managers.menu_component:close_mission_briefing_gui()
+			managers.hud._hud_mission_briefing:hide()
 			managers.menu_component:close_chat_gui()
+			
+			if Global.hud_disabled then
+				managers.hud:set_enabled()
+			end
+			
+			MenuCallbackHandler:debug_goto_custody()
 		end
 	end)
 	
+	IngameWaitingForRespawnState.GUI_SPECTATOR_FULLSCREEN = Idstring("guis/spectator_mode")
+	Hooks:PostHook(IngameWaitingForRespawnState, "at_enter", "PD2DMStartCustodyFogOfWar", function(self)	
+		self._PD2DM_backdrop = MenuBackdropGUI:new()
+		local gui_width, gui_height = managers.gui_data:get_base_res()
+		local variant = math.random(2)
+		local background_layer_full = self._PD2DM_backdrop:get_new_background_layer()
+		local video = background_layer_full:video({
+			blend_mode = "add",
+			name = "money_video",
+			alpha = 0.25,
+			loop = true,
+			video = "movies/fail_stage" .. tostring(variant),
+			width = gui_width,
+			height = gui_height
+		})
+	end)
+	
+	Hooks:PostHook(IngameWaitingForRespawnState, "at_exit", "PD2DMClearCustodyFogOfWar", function(self)
+		self._PD2DM_backdrop:destroy()
+	end)
+	
+	Hooks:PostHook(MissionBriefingGui, "close", "PD2DMFixDMLogo", function(self, ...)
+		self._safe_workspace:panel():remove(self._lobby_mutators_text)
+	end)
+
 	IngameWaitingForRespawnState.trade_death = function()
 		managers.dialog:queue_narrator_dialog("h51", {})
 	end
 	
 	Hooks:PostHook(SecurityCamera, "_sound_the_alarm", "PD2DMAlarmBeepRemoval", function(self, ...)
-		if managers.menu:is_deathmatch_mode() then
-			self._alarm_sound = self._unit:sound_source():post_event("camera_silent")
-		end
+		self._alarm_sound = self._unit:sound_source():post_event("camera_silent")
 	end)
 	
 	Hooks:PostHook(HUDManager, 'align_teammate_name_label', 'PD2DMRemoveNameLables', function(self, panel, ...)

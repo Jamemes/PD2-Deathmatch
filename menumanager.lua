@@ -130,7 +130,7 @@ Hooks:Add("MenuManagerBuildCustomMenus", "Deathmatch_Mode_options", function(men
 			help_id = "return_to_loadout_desc",
 			font = "fonts/font_large_mf",
 			font_size = 30,
-			visible_callback = "is_deathmatch_mode",
+			visible_callback = "is_deathmatch_mode is_kit_menu_opened",
 			callback = "return_to_loadout_clbk"
 		}
 		local new_item = node:create_item(data_node, params)
@@ -163,11 +163,16 @@ function MenuCallbackHandler:is_not_deathmatch_mode()
 	return not managers.menu:is_deathmatch_mode()
 end
 
+function MenuCallbackHandler:is_kit_menu_opened()
+	local kit_menu = managers.menu:get_menu("kit_menu")
+	return kit_menu and not kit_menu.renderer:is_open()
+end
+
 function MenuManager:is_deathmatch_mode()
 	local mutator = managers.mutators:get_mutator(MutatorFriendlyFire)
 	return string.find(mutator:value("deathmatch"), "enabled")
 end
-
+	
 local data = MenuCallbackHandler.save_mutator_options
 function MenuCallbackHandler:save_mutator_options(item)
 	local mutator = managers.mutators:get_mutator(MutatorFriendlyFire)
@@ -193,9 +198,15 @@ end
 
 function MenuCallbackHandler:return_to_loadout_clbk()
 	managers.menu:close_menu()
-	managers.network:session():local_peer():set_waiting_for_player_ready(false)
-	managers.hud:load_hud_menu(Idstring("guis/level_intro"), false, false, true, {})
+	managers.hud._hud_mission_briefing:show()
+	managers.hud:set_disabled()
 	managers.menu:open_menu("kit_menu")
+	managers.network:session():local_peer():set_waiting_for_player_ready(false)
+
+	-- test.text(managers.menu:active_menu().logic:selected_node():parameters())
+	-- Global.PD2DM_back_drop_gui = MenuBackdropGUI:new()
+	-- managers.player:player_unit():character_damage():set_invulnerable(true)
+	-- managers.player:set_player_state("fatal")
 end
 
 function MenuCallbackHandler:play_deathmatch_mode()
