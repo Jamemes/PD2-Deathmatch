@@ -1,14 +1,23 @@
 local function switch_dm_matchmaking_key(toggle)
 	local dm_key = "_DEATHMATCH_MODE"
-	local matchmake_key = NetworkMatchMakingSTEAM._BUILD_SEARCH_INTEREST_KEY
+	local matchmake_STEAM = NetworkMatchMakingSTEAM._BUILD_SEARCH_INTEREST_KEY
+	local matchmake_EPIC = NetworkMatchMakingEPIC._BUILD_SEARCH_INTEREST_KEY
 	
 	if toggle then
-		if not string.find(matchmake_key, dm_key) then
-			NetworkMatchMakingSTEAM._BUILD_SEARCH_INTEREST_KEY = matchmake_key .. dm_key
+		if not string.find(matchmake_STEAM, dm_key) then
+			NetworkMatchMakingSTEAM._BUILD_SEARCH_INTEREST_KEY = matchmake_STEAM .. dm_key
+		end
+		
+		if not string.find(matchmake_EPIC, dm_key) then
+			NetworkMatchMakingEPIC._BUILD_SEARCH_INTEREST_KEY = matchmake_EPIC .. dm_key
 		end
 	elseif not toggle then
-		if string.find(matchmake_key, dm_key) then
-			NetworkMatchMakingSTEAM._BUILD_SEARCH_INTEREST_KEY = string.gsub(matchmake_key, dm_key, "")
+		if string.find(matchmake_STEAM, dm_key) then
+			NetworkMatchMakingSTEAM._BUILD_SEARCH_INTEREST_KEY = string.gsub(matchmake_STEAM, dm_key, "")
+		end
+		
+		if string.find(matchmake_EPIC, dm_key) then
+			NetworkMatchMakingEPIC._BUILD_SEARCH_INTEREST_KEY = string.gsub(matchmake_EPIC, dm_key, "")
 		end
 	end
 end
@@ -22,14 +31,16 @@ Hooks:Add("LocalizationManagerPostInit", "Deathmatch_Mode_loc", function(...)
 		menu_cn_deathmatchs_active = "Deathmatch",
 		deathmatch_mode_options = "Deathmatch settings",
 		deathmatch_mode_options_desc = "Your lobby, your own rules!",
+		return_to_briefing = "Return to Briefing",
+		return_to_briefing_desc = "Return you into the briefing, so you might change your weapons, skills and equipment.",
 		dm_respawn_time = "Respawn time",
 		dm_damage_interval = "Interval between taking damage",
 		dm_armor_regen_speed = "Armor regeneration time",
 		dm_movement_speed = "Players movement speed",
 		dm_police_force = "Police Force",
-		dm_endless_assault = "Endless Assault",
 		dm_damage_on_players = "Damage on players",
-		dm_endless_assault_desc = "No breaks between assaults.",
+		dm_no_alarms = "Disable NPCs",
+		dm_no_alarms_desc = "Removes all npcs from the map.",
 		player_without_dmm = " has no PD2 Deathmatch installed.",
 		secs = "s.",
 	})
@@ -48,9 +59,9 @@ Hooks:Add("LocalizationManagerPostInit", "Deathmatch_Mode_loc", function(...)
 			dm_armor_regen_speed = "Скорость регенерации брони",
 			dm_movement_speed = "Скорость передвижения игроков",
 			dm_police_force = "Кол-во Полицейских",
-			dm_endless_assault = "Бесконечный штурм",
 			dm_damage_on_players = "Урон по игрокам",
-			dm_endless_assault_desc = "Нет перерывов между штурмами.",
+			dm_no_alarms = "Отключить НПС",
+			dm_no_alarms_desc = "Удаляет всех НПС на карте.",
 			player_without_dmm = " не имеет PD2 Deathmatch в списке модов.",
 			secs = "с.",
 		})
@@ -125,13 +136,13 @@ Hooks:Add("MenuManagerBuildCustomMenus", "Deathmatch_Mode_options", function(men
 			type = "CoreMenuItem.Item"
 		}
 		local params = {
-			name = "return_to_loadout",
-			text_id = "return_to_loadout",
-			help_id = "return_to_loadout_desc",
+			name = "return_to_briefing",
+			text_id = "return_to_briefing",
+			help_id = "return_to_briefing_desc",
 			font = "fonts/font_large_mf",
 			font_size = 30,
 			visible_callback = "is_deathmatch_mode is_kit_menu_opened",
-			callback = "return_to_loadout_clbk"
+			callback = "return_to_briefing_clbk"
 		}
 		local new_item = node:create_item(data_node, params)
 		
@@ -196,7 +207,7 @@ function MenuCallbackHandler:open_deathmatch_options()
 	managers.menu:open_node("mutators_options", {mutator})
 end
 
-function MenuCallbackHandler:return_to_loadout_clbk()
+function MenuCallbackHandler:return_to_briefing_clbk()
 	managers.menu:close_menu()
 	managers.hud._hud_mission_briefing:show()
 	managers.hud:set_disabled()
@@ -241,6 +252,13 @@ function MenuCallbackHandler:play_deathmatch_mode()
 	managers.menu:active_menu().callback_handler:_update_mutators_info()
 
 	switch_dm_matchmaking_key(true)
+
+	-- if BigLobbyGlobals.Menu and BigLobbyGlobals.Menu._data then
+		-- BigLobbyGlobals.Menu._data.lobby_size = 16
+		-- BigLobbyGlobals.is_small_lobby = function()
+			-- return false
+		-- end
+	-- end
 end
 
 Hooks:PostHook(MenuComponentManager, '_create_menuscene_info_gui', 'PD2DMResetDMM', function(...)
@@ -253,8 +271,15 @@ Hooks:PostHook(MenuComponentManager, '_create_menuscene_info_gui', 'PD2DMResetDM
 			
 			managers.mutators:set_enabled(mutator, false)
 			managers.menu:active_menu().callback_handler:_update_mutators_info()
-			
 			switch_dm_matchmaking_key(false)
+			
+			-- if BigLobbyGlobals.Menu and BigLobbyGlobals.Menu._data then
+
+				-- BigLobbyGlobals.is_small_lobby = function()
+					-- return true
+				-- end
+			-- end
+			
 		end
 	end
 end)

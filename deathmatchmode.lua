@@ -1,4 +1,45 @@
-MutatorFriendlyFire.default = "disabled|5|0|6|1|1|off|1"
+local settings_list = {
+	{"respawn_time", "slider", 0, 1, 0, 120, 1},
+	{"damage_interval", "slider", 0, 0.01, 0, 1, 0.01},
+	{"armor_regen_speed", "slider", 6, 1, 1, 12, 0.01},
+	{"movement_speed", "slider", 1, 0.05, 0.5, 2, 0.01},
+	{"police_force", "slider", 1, 0.05, 1, 5, 0.01},
+	{"no_alarms", "toggle", "off"},
+	{"bleedout", "slider", 5, 1, 0, 30, 1},
+	{"lives", "slider", 2, 1, 0, 5, 1}
+}
+
+local function get_value(id)
+	for index, setting in pairs(settings_list) do
+		if setting[1] == id then
+			return index + 2
+		end
+	end
+end
+
+		-- add_()
+		-- add_slider()
+		-- add_slider()
+		-- add_slider()
+		-- add_slider()
+		-- add_toggle()
+		
+		-- local slider = node:item("ff_damage_slider")
+		-- if slider then
+			-- slider:set_value(values[8])
+		-- end
+		
+		-- add_slider()
+		-- add_slider()
+		
+		
+
+-- MutatorFriendlyFire.default = "disabled|0|0|6|1|1|off|1|5|2"
+
+MutatorFriendlyFire.default = "disabled|1"
+for _, setting in pairs(settings_list) do
+	MutatorFriendlyFire.default = MutatorFriendlyFire.default .. "|" .. setting[3]
+end
 
 Hooks:PostHook(MutatorFriendlyFire, 'register_values', 'PD2DMRegisterValues', function(self, mutator_manager)
 	self:register_value("deathmatch", self.default, "dz")
@@ -16,13 +57,10 @@ Hooks:PostHook(MutatorFriendlyFire, 'reset_to_default', 'PD2DMDefault', function
 	end
 	
 	values[1] = "enabled"
-	reset_options(2, "respawn_time")
-	reset_options(3, "damage_interval")
-	reset_options(4, "armor_regen_speed")
-	reset_options(5, "movement_speed")
-	reset_options(6, "police_force")
-	reset_options(7, "endless_assault")
-	reset_options(8, "damage_to_player")
+		
+	for id, setting in pairs(settings_list) do
+		reset_options(id + 2, setting[1])
+	end
 		
 	self:set_value("deathmatch", table.concat(values, "|"))
 end)
@@ -46,28 +84,34 @@ function MutatorFriendlyFire:name()
 	if values[1] == "enabled" then
 		local dm = ""
 
-		dm = dm .. managers.localization:text("dm_respawn_time") .. ":\n " .. self:conv("min", values[2]) .. "\n"
-		
-		if math.round(values[3], 0.01) ~= 0 then
-			dm = dm .. managers.localization:text("dm_damage_interval") .. ":\n " .. self:conv("sec", values[3]) .. "\n"
-		end
-		
-		dm = dm .. managers.localization:text("dm_armor_regen_speed") .. ":\n " .. self:conv("sec", values[4]) .. "\n"
-		
-		if math.round(values[5], 0.01) ~= 1 then
-			dm = dm .. managers.localization:text("dm_movement_speed") .. ":\n " .. self:conv("per", values[5]) .. "\n"
-		end
-		
-		if math.round(values[6], 0.01) ~= 1 then
-			dm = dm .. managers.localization:text("dm_police_force") .. ":\n " .. self:conv("per", values[6]) .. "\n"
-		end
-		
-		if math.round(values[8], 0.01) ~= 1 then
-			dm = dm .. managers.localization:text("dm_damage_on_players") .. ":\n " .. self:conv("per", math.round(self:value("damage_multiplier"), 0.01)) .. "\n"
-		end
+		-- dm = dm .. managers.localization:text("dm_respawn_time") .. ":\n " .. self:conv("min", values[2]) .. "\n"
 
-		if values[7] == "on" then
-			dm = dm .. managers.localization:text("dm_endless_assault") .. ":\n -" .. managers.localization:text("dm_endless_assault_desc") .. "\n"
+		-- dm = dm .. managers.localization:text("dm_bleedout") .. ":\n " .. self:conv("min", values[9]) .. "\n"
+		
+		-- dm = dm .. managers.localization:text("dm_lives") .. ":\n " .. math.round(values[10]) .. "\n"
+		
+		-- if math.round(values[3], 0.01) ~= 0 then
+			-- dm = dm .. managers.localization:text("dm_damage_interval") .. ":\n " .. self:conv("sec", values[3]) .. "\n"
+		-- end
+		
+		-- dm = dm .. managers.localization:text("dm_armor_regen_speed") .. ":\n " .. self:conv("sec", values[4]) .. "\n"
+		
+		-- if math.round(values[5], 0.01) ~= 1 then
+			-- dm = dm .. managers.localization:text("dm_movement_speed") .. ":\n " .. self:conv("per", values[5]) .. "\n"
+		-- end
+		
+		-- if math.round(values[6], 0.01) ~= 1 then
+			-- dm = dm .. managers.localization:text("dm_police_force") .. ":\n " .. self:conv("per", values[6]) .. "\n"
+		-- end
+		
+
+
+		-- if values[7] == "on" then
+			-- dm = dm .. managers.localization:text("dm_no_alarms") .. ":\n -" .. managers.localization:text("dm_no_alarms_desc") .. "\n"
+		-- end
+		
+		if math.round(values[2], 0.01) ~= 1 then
+			dm = dm .. managers.localization:text("dm_damage_on_players") .. ":\n " .. self:conv("per", math.round(self:value("damage_multiplier"), 0.01)) .. "\n"
 		end
 		
 		return dm
@@ -129,16 +173,17 @@ function MutatorFriendlyFire:setup_options_gui(node)
 	end
 	
 	if string.find(self:value("deathmatch"), "enabled") then
-		add_slider(2, "respawn_time", 1, 0, 120, 1)
-		add_slider(3, "damage_interval", 0.01, 0, 1, 0.01)
-		add_slider(4, "armor_regen_speed", 1, 1, 12, 0.01)
-		add_slider(5, "movement_speed", 0.05, 0.5, 2, 0.01)
-		add_slider(6, "police_force", 0.05, 0, 5, 0.01)
-		add_toggle(7, "endless_assault")
+		for id, setting in pairs(settings_list) do
+			if setting[2] == "slider" then
+				add_slider(id + 2, setting[1], setting[4], setting[5], setting[6], setting[7])
+			elseif setting[2] == "toggle" then
+				add_toggle(id + 2, setting[1])
+			end
+		end
 		
 		local slider = node:item("ff_damage_slider")
 		if slider then
-			slider:set_value(values[8])
+			slider:set_value(values[2])
 		end
 		
 		node:parameters().scene_state = "blackmarket"
@@ -151,14 +196,14 @@ Hooks:PostHook(MutatorFriendlyFire, 'modify_value', 'PD2DMModifyValues', functio
 	local values = string.split(self:value("deathmatch"), "|")
 	if values[1] == "enabled" then
 		if id == "HuskPlayerDamage:FriendlyFireDamage" then
-			return value * values[8]
+			return value * values[2]
 		end
 	end
 end)
 
 Hooks:PostHook(MutatorFriendlyFire, '_update_damage_multiplier', 'PD2DMModifyDamageToPlayers', function(self, item)
 	local values = string.split(self:value("deathmatch"), "|")
-	values[8] = math.round(item:value(), 0.01)
+	values[2] = math.round(item:value(), 0.01)
 	self:set_value("deathmatch", table.concat(values, "|"))
 end)
 
@@ -178,8 +223,53 @@ function MutatorFriendlyFire:on_game_started(mutator_manager)
 	SecurityCamera._set_suspicion_sound = function() end
 	ElementMissionEnd.on_executed = function() end
 	TradeManager._announce_spawn = function() end
-	CopBrain.begin_alarm_pager = function() end
+	ElementPointOfNoReturn.operation_add = function() end
+	
+		-- for _, unit in pairs(tweak_data.character) do
+			-- if unit.calls_in then
+				-- unit.calls_in = nil
+			-- end
+		-- end	
 
+		
+		-- managers.groupai:add_event_listener({}, "start_assault", function()
+			-- managers.groupai:state():set_wave_mode("hunt")
+		-- end)
+		
+		-- local action_request = CopMovement.action_request
+		-- function CopMovement:action_request(action_desc)
+
+		-- "e_so_alarm_under_table",
+		-- "e_so_std_alarm",
+		-- "cmf_so_press_alarm_wall",
+		-- "cmf_so_press_alarm_table",
+		
+			-- if action_desc.variant == "run" then
+				-- action_desc.variant = "suppressed_reaction"
+				-- return false
+			-- end
+			
+			-- return action_request(self, action_desc)
+		-- end
+		
+	if values[get_value("no_alarms")] == "on" then
+		-- GroupAIStateBase.on_police_called = function() end
+		-- CivilianLogicFlee.on_police_call_success = function() end
+		-- GroupAIStateBase.on_police_weapons_hot = function() end
+		-- GroupAIStateBase.on_gangster_weapons_hot = function() end
+		-- CopBrain.begin_alarm_pager = function() end
+		
+		if managers.groupai then
+			managers.groupai:state():set_AI_enabled(false)
+		end
+						
+		ElementLaserTrigger.update_laser = function() return end
+
+		
+		
+		-- managers.groupai:set_state("empty")
+	end
+	
 	Hooks:PostHook(MissionBriefingGui, "on_ready_pressed", "PD2DMSendtocustodyafterloadout", function(self, ...)
 		if self._ready and not game_state_machine:current_state().blackscreen_started then
 			managers.menu:close_menu("kit_menu")
@@ -232,13 +322,13 @@ function MutatorFriendlyFire:on_game_started(mutator_manager)
 		panel:set_size(0, 0)
 	end)
 	
-	for i, panels in ipairs(managers.hud._teammate_panels) do
-		if panels and panels:panel() then
-			panels:panel():child("player"):child("revive_panel"):hide()
-			panels:panel():child("callsign"):show()
-			panels:panel():child("callsign_bg"):show()
-		end
-	end
+	-- for i, panels in ipairs(managers.hud._teammate_panels) do
+		-- if panels and panels:panel() then
+			-- panels:panel():child("player"):child("revive_panel"):hide()
+			-- panels:panel():child("callsign"):show()
+			-- panels:panel():child("callsign_bg"):show()
+		-- end
+	-- end
 	
 	Hooks:PostHook(HuskPlayerMovement, "set_character_anim_variables", "PD2DMRemoveTeammateContours", function(self)
 		self._unit:contour():add("teammate", nil, nil, Color.black)
@@ -257,8 +347,8 @@ function MutatorFriendlyFire:on_game_started(mutator_manager)
 	local data = PlayerManager.movement_speed_multiplier
 	function PlayerManager:movement_speed_multiplier(speed_state, bonus_multiplier, upgrade_level, health_ratio)
 		local value = data(self, speed_state, bonus_multiplier, upgrade_level, health_ratio)
-		
-		value = value * values[5]
+
+		value = value * values[get_value("movement_speed")]
 		
 		return value
 	end
@@ -293,16 +383,10 @@ function MutatorFriendlyFire:on_game_started(mutator_manager)
 		return returned
 	end
 	
-	if values[6] ~= 1 then
+	if values[get_value("police_force")] ~= 1 then
 		for i = 1, 4 do
-			force[i] = force[i] * values[6]
+			force[i] = force[i] * values[get_value("police_force")]
 		end
-	end
-	
-	if values[7] == "on" then
-		managers.groupai:add_event_listener({}, "start_assault", function()
-			managers.groupai:state():set_wave_mode("hunt")
-		end)
 	end
 	
 	for _, lvl in pairs(tweak_data.levels) do
@@ -331,11 +415,11 @@ function MutatorFriendlyFire:on_game_started(mutator_manager)
 	cont.interactable_look_at.standard_color = color
 
 	local player = tweak_data.player
-	player.damage.automatic_respawn_time = values[2]
-	player.damage.MIN_DAMAGE_INTERVAL = values[3]
-	player.damage.REGENERATE_TIME = values[4]
-	player.damage.DOWNED_TIME = 0
-	player.damage.LIVES_INIT = 0
+	player.damage.automatic_respawn_time = math.floor(values[get_value("respawn_time")])
+	player.damage.MIN_DAMAGE_INTERVAL = values[get_value("damage_interval")]
+	player.damage.REGENERATE_TIME = values[get_value("armor_regen_speed")]
+	player.damage.DOWNED_TIME = math.floor(values[get_value("bleedout")])
+	player.damage.LIVES_INIT = 1 + math.floor(values[get_value("lives")])
 	player.damage.respawn_time_penalty = 0
 	player.damage.base_respawn_time_penalty = 0
 
