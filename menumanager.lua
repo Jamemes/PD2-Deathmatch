@@ -181,9 +181,33 @@ end
 
 function MenuManager:is_deathmatch_mode()
 	local mutator = managers.mutators:get_mutator(MutatorFriendlyFire)
-	return string.find(mutator:value("deathmatch"), "enabled")
+	return string.find(mutator:value("deathmatch"), "payback=1")
 end
-	
+
+function MenuManager:is_deathmatch_mode()
+	local mutator = managers.mutators:get_mutator(MutatorFriendlyFire)
+	return string.find(mutator:value("deathmatch"), "payback=1")
+end
+
+function MenuManager:conv_val(val, setting)
+	if setting == "table" then
+		local tbl = {}
+		local str = string.split(val, "|")
+		for k, v in pairs(str) do
+			local value = string.split(v, "=")
+			tbl[value[1]] = tonumber(value[2])
+		end
+
+		return tbl
+	elseif setting == "string" then
+		local tbl = {}
+		for k, v in pairs(val) do
+			table.insert(tbl, k.."="..v)
+		end
+		return table.concat(tbl, "|")
+	end
+end
+
 local data = MenuCallbackHandler.save_mutator_options
 function MenuCallbackHandler:save_mutator_options(item)
 	local mutator = managers.mutators:get_mutator(MutatorFriendlyFire)
@@ -233,21 +257,13 @@ function MenuCallbackHandler:play_deathmatch_mode()
 	for _, mutator in ipairs(managers.mutators:mutators()) do
 		managers.mutators:set_enabled(mutator, false)
 	end
-	
-	local function size(str, val)
-		return table.size(string.split(str, "|"))
-	end
-	
+
 	local mutator = managers.mutators:get_mutator(MutatorFriendlyFire)
 	managers.mutators:set_enabled(mutator, true)
 	
-	if size(mutator:value("deathmatch")) ~= size(mutator.default) then
-		mutator:clear_values()
-	end
-
-	local values = string.split(mutator:value("deathmatch"), "|")
-	values[1] = "enabled"
-	mutator:set_value("deathmatch", table.concat(values, "|"))
+	local values = managers.menu:conv_val(mutator:value("deathmatch"), "table")
+	values.payback = 1
+	mutator:set_value("deathmatch", managers.menu:conv_val(values, "string"))
 	
 	managers.menu:active_menu().callback_handler:_update_mutators_info()
 
@@ -264,10 +280,19 @@ end
 Hooks:PostHook(MenuComponentManager, '_create_menuscene_info_gui', 'PD2DMResetDMM', function(...)
 	if not Network:is_server() then
 		local mutator = managers.mutators:get_mutator(MutatorFriendlyFire)
+		
+		-- local function size(str, val)
+			-- return table.size(string.split(str, "|"))
+		-- end
+		
+		if table.size(managers.menu:conv_val(mutator:value("deathmatch"), "table")) ~= table.size(mutator.default) then
+			mutator:clear_values()
+		end
+
 		if mutator:value("deathmatch") then
-			local values = string.split(mutator:value("deathmatch"), "|")
-			values[1] = "disabled"
-			mutator:set_value("deathmatch", table.concat(values, "|"))
+			local values = managers.menu:conv_val(mutator:value("deathmatch"), "table")
+			values.payback = 0
+			mutator:set_value("deathmatch", managers.menu:conv_val(values, "string"))
 			
 			managers.mutators:set_enabled(mutator, false)
 			managers.menu:active_menu().callback_handler:_update_mutators_info()

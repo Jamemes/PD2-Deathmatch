@@ -1,68 +1,48 @@
-local settings_list = {
-	{"respawn_time", "slider", 0, 1, 0, 120, 1},
-	{"damage_interval", "slider", 0, 0.01, 0, 1, 0.01},
-	{"armor_regen_speed", "slider", 6, 1, 1, 12, 0.01},
-	{"movement_speed", "slider", 1, 0.05, 0.5, 2, 0.01},
-	{"police_force", "slider", 1, 0.05, 1, 5, 0.01},
-	{"no_alarms", "toggle", "off"},
-	{"bleedout", "slider", 5, 1, 0, 30, 1},
-	{"lives", "slider", 2, 1, 0, 5, 1}
+MutatorFriendlyFire.settings_list = {
+	{"respawn_time", 		{value = 0,		item = "slider", 		step = 1, 		min = 0, 		max = 120, 		round = 1 		}},
+	{"bleedout", 			{value = 10,	item = "slider", 		step = 1, 		min = 0, 		max = 30, 		round = 1 		}},
+	{"lives", 				{value = 3,		item = "slider", 		step = 1, 		min = 0, 		max = 5, 		round = 1 		}},
+	{"damage_interval", 	{value = 0.35,	item = "slider", 		step = 0.01, 	min = 0, 		max = 1, 		round = 0.01 	}},
+	{"armor_regen_speed", 	{value = 3,		item = "slider", 		step = 1, 		min = 1, 		max = 12, 		round = 0.01 	}},
+	{"movement_speed", 		{value = 1,		item = "slider", 		step = 0.05, 	min = 0.5, 		max = 2, 		round = 0.01 	}},
+	{"spread_mul", 			{value = 0,		item = "slider", 		step = 0.05, 	min = -2,	 	max = 1, 		round = 0.01 	}},
+	{"recoil_mul", 			{value = 0,		item = "slider", 		step = 0.05, 	min = -2,	 	max = 1, 		round = 0.01 	}},
+	{"reload_speed", 		{value = 1,		item = "slider", 		step = 0.05, 	min = 0.6,	 	max = 3, 		round = 0.01 	}},
+	{"police_force", 		{value = 1,		item = "slider", 		step = 0.05, 	min = 1, 		max = 5, 		round = 0.01 	}},
+	{"no_alarms", 			{value = 0,		item = "toggle"}}
 }
 
-local function get_value(id)
-	for index, setting in pairs(settings_list) do
-		if setting[1] == id then
-			return index + 2
-		end
-	end
-end
-
-		-- add_()
-		-- add_slider()
-		-- add_slider()
-		-- add_slider()
-		-- add_slider()
-		-- add_toggle()
-		
-		-- local slider = node:item("ff_damage_slider")
-		-- if slider then
-			-- slider:set_value(values[8])
-		-- end
-		
-		-- add_slider()
-		-- add_slider()
-		
-		
-
--- MutatorFriendlyFire.default = "disabled|0|0|6|1|1|off|1|5|2"
-
-MutatorFriendlyFire.default = "disabled|1"
-for _, setting in pairs(settings_list) do
-	MutatorFriendlyFire.default = MutatorFriendlyFire.default .. "|" .. setting[3]
+-- MutatorFriendlyFire.default = "payback=0|friendlyfire=1|respawn_time=0|bleedout=10|lives=3|damage_interval=0.35|armor_regen_speed=3|movement_speed=1|spread_mul=1|recoil_mul=1|reload_speed=1|police_force=1|no_alarms=0"
+MutatorFriendlyFire.default = {
+	payback = 0,
+	friendlyfire = 1
+}
+for _, setting in pairs(MutatorFriendlyFire.settings_list) do
+	MutatorFriendlyFire.default[setting[1]] = setting[2].value
 end
 
 Hooks:PostHook(MutatorFriendlyFire, 'register_values', 'PD2DMRegisterValues', function(self, mutator_manager)
-	self:register_value("deathmatch", self.default, "dz")
+	self:register_value("deathmatch", managers.menu:conv_val(self.default, "string"), "dz")
 end)
 
 Hooks:PostHook(MutatorFriendlyFire, 'reset_to_default', 'PD2DMDefault', function(self)
-	local values = string.split(self.default, "|")
-	local function reset_options(index, id)
+	local values = deep_clone(self.default)
+	local function reset_options(key, value)
 		if self._node then
-			local option = self._node:item(id)
+			local option = self._node:item(key)
 			if option then
-				option:set_value(values[index])
+				option:set_value(value)
 			end
 		end
 	end
 	
-	values[1] = "enabled"
+	values.payback = 1
 		
-	for id, setting in pairs(settings_list) do
-		reset_options(id + 2, setting[1])
+	for key, value in pairs(values) do
+		reset_options(key, value)
 	end
 		
-	self:set_value("deathmatch", table.concat(values, "|"))
+	self:set_value("deathmatch", managers.menu:conv_val(values, "string"))
 end)
 
 function MutatorFriendlyFire:conv(id, val)
@@ -80,10 +60,10 @@ end
 
 function MutatorFriendlyFire:name()
 	local name = MutatorFriendlyFire.super.name(self)
-	local values = string.split(self:value("deathmatch"), "|")
-	if values[1] == "enabled" then
+	local values = managers.menu:conv_val(self:value("deathmatch"), "table")
+	if values.payback == 1 then
 		local dm = ""
-
+		dm = self:value("deathmatch"):gsub("|", "\n")
 		-- dm = dm .. managers.localization:text("dm_respawn_time") .. ":\n " .. self:conv("min", values[2]) .. "\n"
 
 		-- dm = dm .. managers.localization:text("dm_bleedout") .. ":\n " .. self:conv("min", values[9]) .. "\n"
@@ -110,9 +90,9 @@ function MutatorFriendlyFire:name()
 			-- dm = dm .. managers.localization:text("dm_no_alarms") .. ":\n -" .. managers.localization:text("dm_no_alarms_desc") .. "\n"
 		-- end
 		
-		if math.round(values[2], 0.01) ~= 1 then
-			dm = dm .. managers.localization:text("dm_damage_on_players") .. ":\n " .. self:conv("per", math.round(self:value("damage_multiplier"), 0.01)) .. "\n"
-		end
+		-- if math.round(values[2], 0.01) ~= 1 then
+			-- dm = dm .. managers.localization:text("dm_damage_on_players") .. ":\n " .. self:conv("per", math.round(self:value("damage_multiplier"), 0.01)) .. "\n"
+		-- end
 		
 		return dm
 	else
@@ -122,15 +102,15 @@ end
 
 local data = MutatorFriendlyFire.setup_options_gui
 function MutatorFriendlyFire:setup_options_gui(node)
-	local function add_slider(index, name, step, min, max, round)
+	local function add_slider(name, step, min, max, round)
 		local params = {
 			name = name,
 			callback = "_update_mutator_value",
 			text_id = "dm_" .. name,
 			update_callback = function(item)
-				local values = string.split(self:value("deathmatch"), "|")
-				values[index] = math.round(item:value(), round)
-				self:set_value("deathmatch", table.concat(values, "|"))
+				local values = managers.menu:conv_val(self:value("deathmatch"), "table")
+				values[name] = math.round(item:value(), round)
+				self:set_value("deathmatch", managers.menu:conv_val(values, "string"))
 			end
 		}
 		
@@ -142,48 +122,52 @@ function MutatorFriendlyFire:setup_options_gui(node)
 			min = min,
 			max = max
 		}
+
 		local new_item = node:create_item(data_node, params)
 
-		local values = string.split(self:value("deathmatch"), "|")
-		new_item:set_value(values[index])
+		local values = managers.menu:conv_val(self:value("deathmatch"), "table")
+		new_item:set_value(values[name])
 		node:add_item(new_item)
 	end
 	
-	local function add_toggle(index, name)
+	local function add_toggle(name)
 		local params = {
 			name = name,
 			callback = "_update_mutator_value",
 			text_id = "dm_" .. name,
 			update_callback = function(item)
-				local values = string.split(self:value("deathmatch"), "|")
-				values[index] = item:value()
-				self:set_value("deathmatch", table.concat(values, "|"))
+				local values = managers.menu:conv_val(self:value("deathmatch"), "table")
+				values[name] = item:value()
+				self:set_value("deathmatch", managers.menu:conv_val(values, "string"))
 			end
 		}
 		local data_node = {
-			{ w = 24, y = 0, h = 24, s_y = 24, value = "on", s_w = 24, s_h = 24, s_x = 24, _meta = "option", icon = "guis/textures/menu_tickbox", x = 24, s_icon = "guis/textures/menu_tickbox"},
-			{ w = 24, y = 0, h = 24, s_y = 24, value = "off", s_w = 24, s_h = 24, s_x = 0, _meta = "option", icon = "guis/textures/menu_tickbox", x = 0, s_icon = "guis/textures/menu_tickbox"},
+			{ w = 24, y = 0, h = 24, s_y = 24, value = 1, s_w = 24, s_h = 24, s_x = 24, _meta = "option", icon = "guis/textures/menu_tickbox", x = 24, s_icon = "guis/textures/menu_tickbox"},
+			{ w = 24, y = 0, h = 24, s_y = 24, value = 0, s_w = 24, s_h = 24, s_x = 0, _meta = "option", icon = "guis/textures/menu_tickbox", x = 0, s_icon = "guis/textures/menu_tickbox"},
 			type = "CoreMenuItemToggle.ItemToggle"
 		}
 		local new_item = node:create_item(data_node, params)
 
-		local values = string.split(self:value("deathmatch"), "|")
-		new_item:set_value(values[index])
+		local values = managers.menu:conv_val(self:value("deathmatch"), "table")
+		new_item:set_value(values[name])
 		node:add_item(new_item)
 	end
 	
-	if string.find(self:value("deathmatch"), "enabled") then
-		for id, setting in pairs(settings_list) do
-			if setting[2] == "slider" then
-				add_slider(id + 2, setting[1], setting[4], setting[5], setting[6], setting[7])
-			elseif setting[2] == "toggle" then
-				add_toggle(id + 2, setting[1])
+	if string.find(self:value("deathmatch"), "payback=1") then
+		for _, setting in pairs(self.settings_list) do
+			if setting then
+				if setting[2].item == "slider" then
+					add_slider(setting[1], setting[2].step, setting[2].min, setting[2].max, setting[2].round)
+				elseif setting[2].item == "toggle" then
+					add_toggle(setting[1])
+				end
 			end
 		end
 		
+		local values = managers.menu:conv_val(self:value("deathmatch"), "table")
 		local slider = node:item("ff_damage_slider")
 		if slider then
-			slider:set_value(values[2])
+			slider:set_value(values.friendlyfire)
 		end
 		
 		node:parameters().scene_state = "blackmarket"
@@ -193,26 +177,26 @@ function MutatorFriendlyFire:setup_options_gui(node)
 end
 
 Hooks:PostHook(MutatorFriendlyFire, 'modify_value', 'PD2DMModifyValues', function(self, id, value)
-	local values = string.split(self:value("deathmatch"), "|")
-	if values[1] == "enabled" then
+	local values = managers.menu:conv_val(self:value("deathmatch"), "table")
+	if values.payback == 1 then
 		if id == "HuskPlayerDamage:FriendlyFireDamage" then
-			return value * values[2]
+			return value * values.friendlyfire
 		end
 	end
 end)
 
 Hooks:PostHook(MutatorFriendlyFire, '_update_damage_multiplier', 'PD2DMModifyDamageToPlayers', function(self, item)
-	local values = string.split(self:value("deathmatch"), "|")
-	values[2] = math.round(item:value(), 0.01)
-	self:set_value("deathmatch", table.concat(values, "|"))
+	local values = managers.menu:conv_val(self:value("deathmatch"), "table")
+	values.friendlyfire = math.round(item:value(), 0.01)
+	self:set_value("deathmatch", managers.menu:conv_val(values, "string"))
 end)
 
 function MutatorFriendlyFire:on_game_started(mutator_manager)
-	if not string.find(self:value("deathmatch"), "enabled") then
+	if not string.find(self:value("deathmatch"), "payback=1") then
 		return
 	end
 	
-	local values = string.split(self:value("deathmatch"), "|")
+	local values = managers.menu:conv_val(self:value("deathmatch"), "table")
 	local group = tweak_data.group_ai
 	local force = group.besiege.assault.force_balance_mul
 	
@@ -224,7 +208,8 @@ function MutatorFriendlyFire:on_game_started(mutator_manager)
 	ElementMissionEnd.on_executed = function() end
 	TradeManager._announce_spawn = function() end
 	ElementPointOfNoReturn.operation_add = function() end
-	
+	ContourExt._upd_color = function() end
+
 		-- for _, unit in pairs(tweak_data.character) do
 			-- if unit.calls_in then
 				-- unit.calls_in = nil
@@ -252,7 +237,7 @@ function MutatorFriendlyFire:on_game_started(mutator_manager)
 			-- return action_request(self, action_desc)
 		-- end
 		
-	if values[get_value("no_alarms")] == "on" then
+	if values.no_alarms == 1 then
 		-- GroupAIStateBase.on_police_called = function() end
 		-- CivilianLogicFlee.on_police_call_success = function() end
 		-- GroupAIStateBase.on_police_weapons_hot = function() end
@@ -264,10 +249,6 @@ function MutatorFriendlyFire:on_game_started(mutator_manager)
 		end
 						
 		ElementLaserTrigger.update_laser = function() return end
-
-		
-		
-		-- managers.groupai:set_state("empty")
 	end
 	
 	Hooks:PostHook(MissionBriefingGui, "on_ready_pressed", "PD2DMSendtocustodyafterloadout", function(self, ...)
@@ -322,13 +303,15 @@ function MutatorFriendlyFire:on_game_started(mutator_manager)
 		panel:set_size(0, 0)
 	end)
 	
-	-- for i, panels in ipairs(managers.hud._teammate_panels) do
-		-- if panels and panels:panel() then
-			-- panels:panel():child("player"):child("revive_panel"):hide()
-			-- panels:panel():child("callsign"):show()
-			-- panels:panel():child("callsign_bg"):show()
-		-- end
-	-- end
+	if values.lives <= 1 then
+		for i, panels in ipairs(managers.hud._teammate_panels) do
+			if panels and panels:panel() then
+				panels:panel():child("player"):child("revive_panel"):hide()
+				panels:panel():child("callsign"):show()
+				panels:panel():child("callsign_bg"):show()
+			end
+		end
+	end
 	
 	Hooks:PostHook(HuskPlayerMovement, "set_character_anim_variables", "PD2DMRemoveTeammateContours", function(self)
 		self._unit:contour():add("teammate", nil, nil, Color.black)
@@ -348,10 +331,74 @@ function MutatorFriendlyFire:on_game_started(mutator_manager)
 	function PlayerManager:movement_speed_multiplier(speed_state, bonus_multiplier, upgrade_level, health_ratio)
 		local value = data(self, speed_state, bonus_multiplier, upgrade_level, health_ratio)
 
-		value = value * values[get_value("movement_speed")]
+		value = value * values.movement_speed
 		
 		return value
 	end
+	
+		
+	local data = NewRaycastWeaponBase.reload_speed_multiplier
+	function NewRaycastWeaponBase:reload_speed_multiplier()
+		local mul = data(self)
+
+		return mul * values.reload_speed
+	end
+
+	local data = NewRaycastWeaponBase.recoil_multiplier
+	function NewRaycastWeaponBase:recoil_multiplier()
+		local mul = data(self)
+		mul = mul * (1 - values.recoil_mul)
+		return mul 
+	end
+	
+	local data = NewRaycastWeaponBase.spread_multiplier
+	function NewRaycastWeaponBase:spread_multiplier(current_state)
+		local mul = data(self, current_state)
+		mul = mul * (1 - values.spread_mul)
+		return mul
+	end
+
+	-- local __reload_speed_multiplier = NewRaycastWeaponBase.reload_speed_multiplier
+	-- function NewRaycastWeaponBase:recoil_multiplier()
+		-- local is_moving = false
+		-- local user_unit = self._setup and self._setup.user_unit
+
+		-- if user_unit then
+			-- is_moving = alive(user_unit) and user_unit:movement() and user_unit:movement()._current_state and user_unit:movement()._current_state._moving
+		-- end
+
+		-- local multiplier = managers.blackmarket:recoil_multiplier(self._name_id, self:weapon_tweak_data().categories, self._silencer, self._blueprint, is_moving)
+
+		-- if self._alt_fire_active and self._alt_fire_data then
+			-- multiplier = multiplier * (self._alt_fire_data.recoil_mul or 1)
+		-- end
+
+		-- return multiplier
+	-- end
+	
+	-- local data = PlayerManager.body_armor_skill_multiplier
+	-- function PlayerManager:body_armor_skill_multiplier(override_armor)
+		-- local value = data(self, override_armor)
+
+		-- value = value * values.movement_speed
+		
+		-- return value
+	-- end
+	
+	-- function PlayerManager:body_armor_skill_multiplier(override_armor)
+		-- local multiplier = 1
+		-- multiplier = multiplier + self:upgrade_value("player", "tier_armor_multiplier", 1) - 1
+		-- multiplier = multiplier + self:upgrade_value("player", "passive_armor_multiplier", 1) - 1
+		-- multiplier = multiplier + self:upgrade_value("player", "armor_multiplier", 1) - 1
+		-- multiplier = multiplier + self:team_upgrade_value("armor", "multiplier", 1) - 1
+		-- multiplier = multiplier + self:get_hostage_bonus_multiplier("armor") - 1
+		-- multiplier = multiplier + self:upgrade_value("player", "perk_armor_loss_multiplier", 1) - 1
+		-- multiplier = multiplier + self:upgrade_value("player", tostring(override_armor or managers.blackmarket:equipped_armor(true, true)) .. "_armor_multiplier", 1) - 1
+		-- multiplier = multiplier + self:upgrade_value("player", "chico_armor_multiplier", 1) - 1
+		-- multiplier = multiplier + self:upgrade_value("player", "mrwi_armor_multiplier", 1) - 1
+
+		-- return multiplier
+	-- end
 	
 	local data = CriminalsManager.get_valid_player_spawn_pos_rot
 	function CriminalsManager:get_valid_player_spawn_pos_rot(peer_id)
@@ -383,9 +430,9 @@ function MutatorFriendlyFire:on_game_started(mutator_manager)
 		return returned
 	end
 	
-	if values[get_value("police_force")] ~= 1 then
+	if values.police_force ~= 1 then
 		for i = 1, 4 do
-			force[i] = force[i] * values[get_value("police_force")]
+			force[i] = force[i] * values.police_force
 		end
 	end
 	
@@ -415,11 +462,11 @@ function MutatorFriendlyFire:on_game_started(mutator_manager)
 	cont.interactable_look_at.standard_color = color
 
 	local player = tweak_data.player
-	player.damage.automatic_respawn_time = math.floor(values[get_value("respawn_time")])
-	player.damage.MIN_DAMAGE_INTERVAL = values[get_value("damage_interval")]
-	player.damage.REGENERATE_TIME = values[get_value("armor_regen_speed")]
-	player.damage.DOWNED_TIME = math.floor(values[get_value("bleedout")])
-	player.damage.LIVES_INIT = 1 + math.floor(values[get_value("lives")])
+	player.damage.automatic_respawn_time = values.respawn_time
+	player.damage.MIN_DAMAGE_INTERVAL = values.damage_interval
+	player.damage.REGENERATE_TIME = values.armor_regen_speed
+	player.damage.DOWNED_TIME = values.bleedout
+	player.damage.LIVES_INIT = 1 + values.lives
 	player.damage.respawn_time_penalty = 0
 	player.damage.base_respawn_time_penalty = 0
 
